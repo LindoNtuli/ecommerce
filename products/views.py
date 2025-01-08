@@ -2,6 +2,8 @@
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from rest_framework import viewsets, permissions
+from .models import Product
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -9,6 +11,15 @@ from .models import Product, Category
 from .serializers import ProductSerializer, CategorySerializer
 from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    
+    pass
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
