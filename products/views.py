@@ -2,8 +2,11 @@
 
 from django.contrib.auth.models import User
 from django.shortcuts import render
-from rest_framework import viewsets, permissions
+from django_filters import rest_framework as django_filters
+from rest_framework import viewsets, permissions, filters
 from .models import Product
+from .models import CustomUser
+from .serializers import UserSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -16,8 +19,10 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.pagination import PageNumberPagination
 
-class StandardResultsSetPagination(PageNumberPagination):
+class ProductPagination(PageNumberPagination):
     page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     
@@ -30,8 +35,20 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    pagination_class = StandardResultsSetPagination
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+    pagination_class = ProductPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'category']  # Enable search on 'name' and 'category'
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        search_query = self.request.query_params.get('search', None)
+        if search_query:
+            queryset = queryset.filter(
+                models.Q(name__icontains=search_query) | 
+                models.Q(category__icontains=search_query)
+            )
+        return queryset
 
     def list(self, request):
         queryset = self.filter_queryset(self.get_queryset())
@@ -104,3 +121,9 @@ class LoginView(APIView):
             return Response({"token": token.key}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+#userViewSet
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]

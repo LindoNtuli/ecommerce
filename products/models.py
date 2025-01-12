@@ -1,6 +1,6 @@
 #products models.py
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, AbstractUser
 
 class Category(models.Model):
     name = models.CharField(max_length=255)
@@ -18,3 +18,9 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)  # Ensuring email uniqueness
+
+    def __str__(self):
+        return self.username
